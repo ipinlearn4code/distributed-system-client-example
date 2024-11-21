@@ -1,109 +1,92 @@
 <?php
-// error_reporting(0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include("Client.php");
 ?>
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
-    <title></title>
+    <title>Aplikasi RESTful</title>
 </head>
 
 <body>
-
-    <?php
-    if (isset($_COOKIE['jwt'])) {
-        ?>
-        <a href="?page=home">Home</a>|<a href="?page=tambah">Tambah Data</a>|<a href="?page=daftar-data">Daftar Server</a>
-        | <a href="proses.php?aksi=logout" onclick="return confirm('Apakah Anda Ingin Logout?')">Logout</a>
+    <?php if (isset($_COOKIE['jwt'])) : ?>
+        <a href="?page=home">Home</a> |
+        <a href="?page=tambah">Tambah Data</a> |
+        <a href="?page=daftar-data">Daftar Data</a> |
+        <a href="proses.php?aksi=logout" onclick="return confirm('Apakah Anda ingin logout?')">Logout</a>
         <br>
-        <?php echo '<strong>' . $_COOKIE['nama'] . '(' . $_COOKIE['id_pengguna'] . ')' . ' </strong>' ?>
-        <?php
-    } else {
-        ?>
-        <a href="?page=home">Home</a>|<a href="?page=login">Login</a>
-        <?php
-    }
-    ?>
+        <strong><?= htmlspecialchars($_COOKIE['nama']) ?> (<?= htmlspecialchars($_COOKIE['id_pengguna']) ?>)</strong>
+    <?php else : ?>
+        <a href="?page=home">Home</a> |
+        <a href="?page=login">Login</a>
+    <?php endif; ?>
 
     <br><br />
     <fieldset>
-        <?php if (isset($_GET['page']) == 'login' and !isset($_COOKIE['jwt'])) { ?>
+        <?php
+        if ($_GET['page'] === 'login' && !isset($_COOKIE['jwt'])) :
+        ?>
             <legend>Login</legend>
-            <form name="form" action="proses.php" method="post">
-                <input type="hidden" name="aksi" value="login" />
+            <form action="proses.php" method="post">
+                <input type="hidden" name="aksi" value="login">
                 <label>Id Pengguna</label>
-                <input type="text" name="id_pengguna" />
-                <br />
+                <input type="text" name="id_pengguna" required>
+                <br>
                 <label>Pin</label>
-                <input type="password" name="pin" />
-                <br />
-                <button type="submit" name="login">Simpan</button>
+                <input type="password" name="pin" required>
+                <br>
+                <button type="submit">Login</button>
             </form>
-        <?php } elseif (isset($_GET['page']) == 'tambah' and isset($_COOKIE['jwt'])) { ?>
+        <?php elseif ($_GET['page'] === 'tambah' && isset($_COOKIE['jwt'])) : ?>
             <legend>Tambah Data</legend>
-            <form name="form" action="proses.php" method="post">
-                <input type="hidden" name="aksi" value="tambah" />
-                <input type="hidden" name="jwt" value="<?= $_COOKIE['jwt'] ?>" />
+            <form action="proses.php" method="post">
+                <input type="hidden" name="aksi" value="tambah">
+                <input type="hidden" name="jwt" value="<?= htmlspecialchars($_COOKIE['jwt']) ?>">
                 <label>Id Barang</label>
-                <input type="text" name="id_barang" />
-                <br />
+                <input type="text" name="id_barang" required>
+                <br>
                 <label>Nama Barang</label>
-                <input type="text" name="nama_barang" />
-                <br />
-                <button type="submit" name="simpan">Simpan</button>
+                <input type="text" name="nama_barang" required>
+                <br>
+                <button type="submit">Simpan</button>
             </form>
-        <?php } elseif (isset($_GET['page']) == 'ubah' and isset($_COOKIE['jwt'])) {
-            $data = array('jwt' => $_COOKIE['jwt'], 'id_barang' => $_GET['id_barang']);
-            $r = $abc->tampil_data($data);
-            ?>
-            <legend>Ubah Data</legend>
-            <form name="form" method="post" action="proses.php">
-                <input type="hidden" name="aksi" value="ubah" />
-                <input type="hidden" name="jwt" value="<?= $_COOKIE['jwt'] ?>" />
-                <input type="hidden" name="id_barang" value="<?= $r->id_barang ?>" />
-                <label>ID Barang</label>
-                <input type="text" value="<?= $r->id_barang ?>" disabled>
-                <br />
-                <label>Nama Barang</label>
-                <input type="text" name="nama_barang" value="<?= $r->nama_barang ?>">
-                <br />
-                <button type="submit" name="ubah">Ubah</button>
-            </form>
-            <?php unset($r, $data, $abc);
-        } elseif (isset($_GET['page']) == 'daftar-data' and isset($_COOKIE['jwt'])) {
-            ?>
-            <legend>Daftar Data Server</legend>
+        <?php elseif ($_GET['page'] === 'daftar-data' && isset($_COOKIE['jwt'])) : ?>
+            <legend>Daftar Data</legend>
             <table border="1">
                 <tr>
-                    <th width="5%">No</th>
-                    <th width="10%">ID Barang</th>
-                    <th width="75%">Nama</th>
-                    <th width="5%" colspan="2">Aksi</th>
+                    <th>No</th>
+                    <th>ID Barang</th>
+                    <th>Nama</th>
+                    <th colspan="2">Aksi</th>
                 </tr>
                 <?php
                 $no = 1;
                 $data_array = $abc->tampil_semua_data($_COOKIE['jwt']);
-                foreach ($data_array as $r) {
+                if (!empty($data_array)) :
+                    foreach ($data_array as $data) :
                 ?>
+                        <tr>
+                            <td><?= $no++ ?></td>
+                            <td><?= htmlspecialchars($data->id_barang) ?></td>
+                            <td><?= htmlspecialchars($data->nama_barang) ?></td>
+                            <td><a href="?page=ubah&id_barang=<?= htmlspecialchars($data->id_barang) ?>">Ubah</a></td>
+                            <td><a href="proses.php?aksi=hapus&id_barang=<?= htmlspecialchars($data->id_barang) ?>&jwt=<?= htmlspecialchars($_COOKIE['jwt']) ?>" onclick="return confirm('Apakah Anda ingin menghapus data ini?')">Hapus</a></td>
+                        </tr>
+                    <?php endforeach;
+                else : ?>
                     <tr>
-                        <td><?= $no ?></td>
-                        <td><?= $r->id_barang ?></td>
-                        <td><?= $r->nama_barang ?></td>
-                        <td><a href="?page=ubah&id_barang=<?= $r->id_barang ?>&jwt=<?= $_COOKIE['jwt'] ?>">Ubah</a></td>
-                        <td><a href="proses.php?aksi=hapus&id_barang=<?= $r->id_barang ?>&jwt=<?= $_COOKIE['jwt'] ?>"
-                                onclick="return confirm('Apakah Anda ingin menghapus data ini?')">Hapus</a></td>
+                        <td colspan="5">Data tidak tersedia.</td>
                     </tr>
-                    <?php $no++;
-                }
-                unset($data_array, $r, $no, $abc);
-                ?>
+                <?php endif; ?>
             </table>
-        <?php } else { ?>
+        <?php else : ?>
             <legend>Home</legend>
-            Aplikasi sederhana ini menggunakan restful json
-        </fieldset>
-    <?php } ?>
+            <p>Selamat datang di aplikasi RESTful sederhana.</p>
+        <?php endif; ?>
+    </fieldset>
 </body>
 
 </html>
